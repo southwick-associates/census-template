@@ -8,4 +8,4 @@ Several packages have been written that provide R front-ends to the Census API (
 
 ### censusapi
 
-Some template code used for the national/regional dashboard is included here.
+Some template code used for the national/regional dashboard is included here, written using R 3.6.1.
