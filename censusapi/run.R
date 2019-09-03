@@ -4,13 +4,12 @@ library(ggplot2)
 source("censusapi/functions.R")
 
 # you'll need to specify a key - https://api.census.gov/data/key_signup.html
-# alternatively, Dan can send you his key
+# SA analyst note: you can ask Dan to send you his key
 Sys.setenv(CENSUS_KEY = Sys.getenv("CENSUS_API_KEY")) 
 
 # get sex-by-age for each state
 pop_seg <- sapply(2010:2017, get_B01001, simplify = FALSE) %>% 
-    bind_rows() %>%
-    as_tibble()
+    bind_rows()
 
 # visualize
 group_by(pop_seg, state, year) %>%
