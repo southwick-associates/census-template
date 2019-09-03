@@ -3,8 +3,6 @@
 library(censusapi)
 library(tidyr)
 library(dplyr)
-library(readxl)
-library(stringr)
 
 # return census data as a tidy data frame
 # mostly a wrapper for getCensus(); uses the same argument names
@@ -23,8 +21,6 @@ get_census_df <- function(name, vintage, group, region, ...) {
         left_join(select(meta, name, label), by = "name")
 }
 
-# Age by Sex Table: B01001 ------------------------------------------------
-
 # pull age by sex for all states (for a given year)
 get_B01001 <- function(vintage) {
     get_census_df("acs/acs5", vintage, "B01001", "state:*") %>%
@@ -33,65 +29,3 @@ get_B01001 <- function(vintage) {
         select(state = geo, sex, age, pop = value) %>%
         mutate(pop = as.numeric(pop), year = vintage)
 }
-
-# load reference state total population
-# https://www.census.gov/data/tables/time-series/demo/popest/2010s-state-total.html
-# https://www2.census.gov/programs-surveys/popest/tables/2000-2010/intercensal/state/
-get_pop <- function(filename = "censusapi/nst-est2018-01.xlsx",
-                    col_names = c("state", "drop1", "drop2", 2010:2018)) {
-    read_excel(filename, skip = 9, n_max = 51, col_names = col_names) %>%
-        select(-contains("drop")) %>%
-        gather(year, pop_state, -state) %>%
-        mutate(state = str_replace(state, ".", ""), year = as.numeric(year))
-}
-
-# extrapolate segments for missing years
-# using most recent year distributions & reference population totals
-extrapolate_yr <- function(pop_seg, pop, yr, direction) {
-    if (direction == "forward") {
-        yr_compare = yr - 1
-        compare <- function(x) lag(x)
-    } else {
-        yr_compare = yr + 1
-        compare <- function(x) lead(x)
-    }
-    ref <- filter(pop, year %in% c(yr, yr_compare)) %>%
-        arrange(state, year) %>%
-        group_by(state) %>%
-        mutate(ratio = pop_state / compare(pop_state)) %>%
-        ungroup() %>%
-        select(state, year, ratio)
-    filter(pop_seg, year == yr_compare) %>%
-        mutate(year = yr) %>%
-        left_join(ref, by = c("state", "year")) %>%
-        mutate(pop = pop * ratio) %>%
-        select(-ratio)
-}
-
-# relation table for acs to dashboard age categories
-age_map <- tribble(
-    ~lic_age, ~acs_age,
-    1,"Under 5 years",
-    1,"5 to 9 years",
-    1,"10 to 14 years",
-    1,"15 to 17 years",
-    2,"18 and 19 years",
-    2,"20 years",
-    2,"21 years",
-    2,"22 to 24 years",
-    3,"25 to 29 years",
-    3,"30 to 34 years",
-    4,"35 to 39 years",
-    4,"40 to 44 years",
-    5,"45 to 49 years",
-    5,"50 to 54 years",
-    6,"55 to 59 years",
-    6,"60 and 61 years",
-    6,"62 to 64 years",
-    7,"65 and 66 years",
-    7,"67 to 69 years",
-    7,"70 to 74 years",
-    7,"75 to 79 years",
-    7,"80 to 84 years",
-    7,"85 years and over"
-)
