@@ -1,4 +1,4 @@
-# pull age-by-sex (by state) for use in national/regional dashboards
+# pull age-by-sex (by state)
 
 library(ggplot2)
 source("censusapi/functions.R")
